@@ -3,6 +3,8 @@
 AI-niche research + X posting pipeline built on LangGraph. Research output is platform-agnostic and meant to be
 read by the sibling pipelines (`../linkedin`, `../telegram`). Plan and status: `docs/PLAN.md`.
 
+Remote: https://github.com/hamed-aghasi/X-Automation (public).
+
 STATUS (2026-09-24): ✅ research graph built + run live (10 topics from 271 fresh items, 0 source errors, 15 tests
 pass). ⏳ X drafting/posting graph not started.
 
