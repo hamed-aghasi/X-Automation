@@ -1,0 +1,209 @@
+{
+ "successful": true,
+ "parallel": true,
+ "results": [
+  {
+   "slug": "COMPOSIO_SEARCH_NEWS",
+   "successful": true,
+   "data": {
+    "has_results": true,
+    "news_results": [
+     {
+      "date": "40 minutes ago",
+      "link": "https://natlawreview.com/press-releases/fintech-studios-launches-mcp-connector-claude-chatgpt-brings-market",
+      "published_at": "2026-09-24 13:16:00 UTC",
+      "snippet": "FTS MCP connector provides users with free-tier access to FTS market and regulatory intelligence, trending entities, collections,...",
+      "source": "The National Law Review",
+      "title": "FinTech Studios Launches MCP Connector for Claude & ChatGPT; Brin"
+     },
+     {
+      "date": "22 hours ago",
+      "link": "https://www.lawnext.com/2026/09/at-its-user-conference-in-las-vegas-8am-announces-mcp-integration-and-new-ai-tools-for-mycase-plus-new-law-firm-funding-program-through-lawpay.html",
+      "published_at": "2026-09-23 16:06:27 UTC",
+      "snippet": "At its second-annual Kaleidoscope customer conference in Las Vegas today, 8am announced new generative AI features, a new Claude MCP...",
+      "source": "LawSites",
+      "title": "At Its User Conference in Las Vegas, 8am Announces MCP Integration and New AI Tools for MyCase, Plus New Law Firm Funding Program through LawPay"
+     }
+    ],
+    "no_results_message": null,
+    "query": "Claude MCP",
+    "total_results": 2900
+   }
+  },
+  {
+   "slug": "COMPOSIO_SEARCH_WEB",
+   "successful": false,
+   "error": "Search request failed (HTTP 501): Sorry, we are unable to generate a response for this query with the available information.",
+   "logId": "log_tl8zpMGlC5ao"
+  },
+  {
+   "slug": "REDDIT_SEARCH_ACROSS_SUBREDDITS",
+   "successful": true,
+   "data": {
+    "after": "t3_1wp1v7y",
+    "before": null,
+    "posts": [
+     {
+      "author": "redacted",
+      "created_datetime": "2026-09-24T13:53:22+00:00",
+      "created_utc": 1790258002,
+      "id": "1wp295z",
+      "is_self": true,
+      "num_comments": 0,
+      "over_18": false,
+      "permalink": "https://www.reddit.com/r/buildinpublic/comments/1wp295z/launched_today_reddit_tools_for_claude_code_and/",
+      "score": 1,
+      "selftext": "ThreadFox went live this morning. It's an MCP server plus a skill: your agent reads a subreddit's rules, searches, posts, answers comments and checks the post is really up, each in one tool call through your own logged-in Chrome (Microsoft's Playwright extension, no API keys). Under it sits a ledger so the agent can't double-post.\n\nWhat building it taught me:\n\n1. Posting was the easy part. The hard part is knowing what happened. A click times out with no permalink, and a blind retry is how you double-post. So every post is reserved before it's sent, a timeout is recorded as \"uncertain\", and that pair stays locked until the account's history is checked.\n\n2. Reddit changed under us this month. Logged-out browser views now redirect to a login page, so \"is my post public?\" can't be checked by looking at it signed out any more. We use Reddit's own removal flags plus whether the post shows in the sub's /new instead.\n\n3. Read the comments. Our first write-up said the tool \"does not browse, search or post\". A reader replied that that's exactly what people want from a Reddit MCP. They were right, and we shipped the posting tools the same day.\n\n4. We're trying a 2010s-style launch price: $27 now, up $1 every 10 sales, $49 from October 1. The counter on the page is real. I'll share how it goes.\n\nTransparency: it's a paid product ($27 launch price) and I'm the maker. The case study behind it is 978,227 recorded views from two days of posts with no ad spend. That's one owner-run case, not a promise.\n\nthreadfox.vip?utm_source=reddit&utm_medium=community&utm_campaign=launch&utm_content=buildinpublic\n\nQuestion for anyone who's built with agents: what would make you trust a tool that posts on your behalf?",
+      "subreddit": "buildinpublic",
+      "subreddit_prefixed": "r/buildinpublic",
+      "title": "Launched today: Reddit tools for Claude Code and Codex that post through your own Chrome. Four things building it taught me",
+      "url": "https://www.reddit.com/r/buildinpublic/comments/1wp295z/launched_today_reddit_tools_for_claude_code_and/"
+     },
+     {
+      "author": "redacted",
+      "created_datetime": "2026-09-24T13:48:25+00:00",
+      "created_utc": 1790257705,
+      "id": "1wp24xf",
+      "is_self": false,
+      "num_comments": 1,
+      "over_18": false,
+      "permalink": "https://www.reddit.com/r/macapps/comments/1wp24xf/trovelo_private_trip_planner_for_mac_now_with/",
+      "score": 1,
+      "selftext": "**Problem:**  \nPlanning a trip means juggling Notes, Google Maps, spreadsheets and booking confirmations across half a dozen apps. Trovelo puts everything in one place, organized day by day, with no Trovelo servers, no account and no third party tracking. Built by a solo traveler with 40+ countries and 300+ cities of experience.\n\n**Comparison:**  \nTripIt charges a yearly subscription and uploads your trips to its servers. Wanderlog is free but ad supported and requires an account. Trovelo keeps everything on your device and syncs through your own iCloud, one payment, no account.\n\nWhat stands out on Mac:\n\n* MCP integration: tell Claude, Codex or any MCP client \"plan me 4 days in Rome\" and watch the trip build itself inside Trovelo, live. Runs 100% locally, off by default\n* Native Mac app with a board view: same trip, same board on iPhone, iPad and Mac\n* 13 languages end to end, with smart parsing: type \"Cena en Casa Lucio 21:30 45€\" and Trovelo picks up time, price and type\n* NEW: Shared trips, invite the people you travel with and everyone works on the same board\n* NEW: Your travel life, a map of every country and city you've visited built from your photo library, with passport stamps and a yearly timeline\n* NEW: Someday, save places now and turn them into a trip later\n* NEW: Packing list that checks the destination's forecast and plug type\n* NEW: Weather next to each day's plan, time per card and a daily pace warning\n* NEW: Documents filed with the trip, plus full account backup and restore\n* Route optimization, curated city and road trip guides, dual currency with live rates, widgets and Live Activities\n\nAlmost everything marked NEW started as someone's comment. Ideas and feature requests: r/trovelo 🖤\n\n**Pricing:**\n\n* Free: up to 3 active trips and 50 cards\n* Lifetime Pro: **$6.99** instead of $9.99, one payment covers Mac, iPhone and iPad, no subscription\n\n→ Mac App Store: [https://apps.apple.com/app/id6760258252](https://apps.apple.com/app/id6760258252)  \n→ Redeem link: [https://apps.apple.com/redeem?ctx=offercodes&id=6760258252&code=TROVELO699](https://apps.apple.com/redeem?ctx=offercodes&id=6760258252&code=TROVELO699)  \n→ Or in app: **Settings → Redeem** → `TROVELO699`",
+      "subreddit": "macapps",
+      "subreddit_prefixed": "r/macapps",
+      "title": "Trovelo: private trip planner for Mac, now with shared trips and MCP support for Claude, Codex and more",
+      "url": "https://www.reddit.com/gallery/1wp24xf"
+     }
+    ],
+    "total_results": 5
+   }
+  },
+  {
+   "slug": "YOUTUBE_SEARCH_YOU_TUBE",
+   "successful": true,
+   "data": {
+    "etag": "myW0-1gOFKcEe_5xjkNlk0jXzMY",
+    "items": [
+     {
+      "etag": "6pvlarG4VB1M7P0wxXtmPa-pAz8",
+      "id": {
+       "kind": "youtube#video",
+       "videoId": "t2ia_yQsHxE"
+      },
+      "kind": "youtube#searchResult",
+      "snippet": {
+       "channelId": "UC_SxPqSqB6HScsgoifD0r7w",
+       "channelTitle": "Daily Tech Talks",
+       "description": "Cloudflare open-sourced their AI security auditor skill (cloudflare/security-audit-skill), gaining over 3000 GitHub stars in 24 hours ...",
+       "liveBroadcastContent": "none",
+       "publishTime": "2026-09-24T11:15:36Z",
+       "publishedAt": "2026-09-24T11:15:36Z",
+       "thumbnails": {
+        "default": {
+         "height": 90,
+         "url": "https://i.ytimg.com/vi/t2ia_yQsHxE/default.jpg",
+         "width": 120
+        },
+        "high": {
+         "height": 360,
+         "url": "https://i.ytimg.com/vi/t2ia_yQsHxE/hqdefault.jpg",
+         "width": 480
+        },
+        "maxres": {
+         "height": 720,
+         "url": "https://i.ytimg.com/vi/t2ia_yQsHxE/maxresdefault.jpg",
+         "width": 1280
+        },
+        "medium": {
+         "height": 180,
+         "url": "https://i.ytimg.com/vi/t2ia_yQsHxE/mqdefault.jpg",
+         "width": 320
+        },
+        "standard": {
+         "height": 480,
+         "url": "https://i.ytimg.com/vi/t2ia_yQsHxE/sddefault.jpg",
+         "width": 640
+        }
+       },
+       "title": "Cloudflare’s AI Security Agent NEVER Trusts Its Own Findings! 🛡️"
+      }
+     },
+     {
+      "etag": "2NOS6PnGpdoOYrICZMmJI4-2CEU",
+      "id": {
+       "kind": "youtube#video",
+       "videoId": "a_FE471EudQ"
+      },
+      "kind": "youtube#searchResult",
+      "snippet": {
+       "channelId": "UCz_upC1sW9mkuXEsa9RJW6Q",
+       "channelTitle": "Automizza",
+       "description": "5 estensioni gratis e open source per Claude Code: memoria fra le sessioni (claude-mem), ricerca di skill (find-skills), documenti ...",
+       "liveBroadcastContent": "none",
+       "publishTime": "2026-09-24T11:00:18Z",
+       "publishedAt": "2026-09-24T11:00:18Z",
+       "thumbnails": {
+        "default": {
+         "height": 90,
+         "url": "https://i.ytimg.com/vi/a_FE471EudQ/default.jpg",
+         "width": 120
+        },
+        "high": {
+         "height": 360,
+         "url": "https://i.ytimg.com/vi/a_FE471EudQ/hqdefault.jpg",
+         "width": 480
+        },
+        "maxres": {
+         "height": 720,
+         "url": "https://i.ytimg.com/vi/a_FE471EudQ/maxresdefault.jpg",
+         "width": 1280
+        },
+        "medium": {
+         "height": 180,
+         "url": "https://i.ytimg.com/vi/a_FE471EudQ/mqdefault.jpg",
+         "width": 320
+        },
+        "standard": {
+         "height": 480,
+         "url": "https://i.ytimg.com/vi/a_FE471EudQ/sddefault.jpg",
+         "width": 640
+        }
+       },
+       "title": "Il tuo Claude Code è INCOMPLETO (ti mancano 5 pezzi)"
+      }
+     }
+    ],
+    "kind": "youtube#searchListResponse",
+    "nextPageToken": "CAMQAA",
+    "pageInfo": {
+     "resultsPerPage": 3,
+     "totalResults": 403503
+    },
+    "regionCode": "US"
+   }
+  },
+  {
+   "slug": "COMPOSIO_SEARCH_WEB",
+   "successful": true,
+   "data": {
+    "citations": [
+     {
+      "id": "https://bashirpour.com/series/mcp-building-ai-tools/mcp-connecting-claude/",
+      "image": "https://bashirpour.com/wp-content/themes/wp-theme-bashirpour.com/assets/images/mahdi-bashirpour.jpg",
+      "publishedDate": "2026-05-15T17:30:00.000Z",
+      "title": "اتصال MCP به Claude و مدل‌های دیگه | مهدی بشیرپور",
+      "url": "https://bashirpour.com/series/mcp-building-ai-tools/mcp-connecting-claude/"
+     },
+     {
+      "id": "https://zarinpardakht.com/blog/what-is-mcp-in-claude",
+      "image": "https://storage.zarinpardakht.com/v10/959e571a-d049-4fc4-a9d6-d305f68334ae/what-is-mcp-in-claude-.webp",
+      "publishedDate": "2026-08-19T05:01:00.000Z",
+      "title": "MCP در کلود | آموزش نصب و تست MCP Server | زرین پرداخت",
+      "url": "https://zarinpardakht.com/blog/what-is-mcp-in-claude"
+     }
+    ]
+   }
+  }
+ ]
+}

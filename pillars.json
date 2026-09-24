@@ -1,0 +1,76 @@
+{
+  "_doc": "Research niche. Each pillar fans out to every source. en = English queries (HN, GitHub, Reddit, YouTube, news, web, trends); fa = Persian web queries.",
+  "pillars": [
+    {
+      "name": "Claude & Anthropic",
+      "en": [
+        "Claude Code",
+        "Anthropic Claude"
+      ],
+      "fa": [
+        "اخبار Claude هوش مصنوعی"
+      ],
+      "github": [
+        "claude code"
+      ],
+      "trends": "Claude AI"
+    },
+    {
+      "name": "ChatGPT & OpenAI",
+      "en": [
+        "ChatGPT",
+        "OpenAI Codex"
+      ],
+      "fa": [
+        "اخبار ChatGPT"
+      ],
+      "github": [
+        "codex cli"
+      ],
+      "trends": "ChatGPT"
+    },
+    {
+      "name": "Agent skills",
+      "en": [
+        "Claude skills",
+        "agent skills SKILL.md"
+      ],
+      "fa": [
+        "Claude Code اسکیل جدید"
+      ],
+      "github": [
+        "claude skills",
+        "agent skills"
+      ],
+      "trends": "Claude skills"
+    },
+    {
+      "name": "MCP connections",
+      "en": [
+        "MCP server",
+        "Model Context Protocol"
+      ],
+      "fa": [
+        "MCP سرور جدید هوش مصنوعی"
+      ],
+      "github": [
+        "mcp server"
+      ],
+      "trends": "MCP server"
+    },
+    {
+      "name": "AI automation",
+      "en": [
+        "AI automation n8n",
+        "AI agents workflow automation"
+      ],
+      "fa": [
+        "اخبار اتوماسیون هوش مصنوعی n8n"
+      ],
+      "github": [
+        "ai agent automation"
+      ],
+      "trends": "AI automation"
+    }
+  ]
+}

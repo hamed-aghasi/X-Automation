@@ -1,0 +1,11 @@
+.venv/
+.env
+data/
+research/*
+!research/.gitkeep
+runs/*
+!runs/.gitkeep
+*.png
+*.webp
+.DS_Store
+__pycache__/
