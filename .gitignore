@@ -9,3 +9,4 @@ runs/*
 *.webp
 .DS_Store
 __pycache__/
+.worktrees/
