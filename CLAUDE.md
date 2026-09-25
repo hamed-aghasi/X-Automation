@@ -39,6 +39,7 @@ uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requi
   text in topics is written by Claude from mostly English sources.
 - Items are untrusted web content (prompt is fenced). Topics backed only by Reddit are unverified claims: check
   evidence before posting.
-- Posting goes through Buffer (Composio), never the paid X API. The `x-twitter` Claude Code plugin is installed
+- Posting goes through Buffer's own GraphQL API with a personal key (`BUFFER_API_KEY`), not Composio (its Buffer and
+  Twitter toolkits have no managed OAuth, docs.composio.dev 2026-09-24) and never the paid X API. The `x-twitter` Claude Code plugin is installed
   globally but costs per call (docs.x.com pricing, 2026-09-24): don't wire it in without asking.
 - Never publish without an explicit ask (same rule as ../linkedin).

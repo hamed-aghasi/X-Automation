@@ -21,7 +21,7 @@ re-aimed at one niche and split so the research is reusable by every platform, n
 | Gemini tweet (pidgin) | `draft` — Claude, EN + FA variants |
 | — | `review` — Claude critique, max 2 revise loops (new) |
 | FLUX on HuggingFace + Dropbox link | `image` — Higgsfield |
-| Buffer MCP post | `publish` — Composio `BUFFER_CREATE_POST_DRAFT` / `BUFFER_PUBLISH_POSTS` |
+| Buffer MCP post | `publish` — Buffer GraphQL API (`https://api.buffer.com`, Bearer `BUFFER_API_KEY` in .env) |
 | — | `approve` — LangGraph `interrupt()` before publish (new) |
 
 ## Two graphs
@@ -35,7 +35,8 @@ re-aimed at one niche and split so the research is reusable by every platform, n
    - SQLite checkpointer so a run paused at `approve` resumes later from the CLI.
 
 ## Blockers (need the user)
-- Buffer: link the Composio `buffer` toolkit to a Buffer account that has X connected (`composio link buffer`).
+- Buffer: connect X inside Buffer, then create a personal API key at publish.buffer.com/settings/api → `.env`
+  `BUFFER_API_KEY`. (Composio's buffer toolkit has no managed OAuth — it needs your own client id/secret, 2026-09-24.)
 - Higgsfield headless: the local `higgsfield` MCP says "Needs authentication" (`claude mcp list`, 2026-09-24);
   only the claude.ai connector is live, which headless runs cannot use. One OAuth login fixes it.
 - Claude: no ANTHROPIC_API_KEY on this machine, so Claude nodes call `claude -p` (subscription). Unverified
