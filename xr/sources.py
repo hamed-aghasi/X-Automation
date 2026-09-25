@@ -12,7 +12,7 @@ import subprocess
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 UA = "x-research/0.1 (+social-media-automation)"
 
@@ -54,13 +54,17 @@ def parse_hn(doc: dict, pillar: str) -> list[dict]:
     return [i for i in out if i["title"]]
 
 
-def hacker_news(pillars: list[dict], hours: int = 48) -> list[dict]:
+def hacker_news(pillars: list[dict], hours: int = 48) -> tuple[list[dict], list[str]]:
+    """One failed query costs only that query: its error is reported, the other queries' items are kept."""
     since = int(time.time()) - hours * 3600
-    items = []
+    items, errors = [], []
     for p in pillars:
         for q in p["en"]:
-            items += parse_hn(_get_json(hn_url(q, since)), p["name"])
-    return items
+            try:
+                items += parse_hn(_get_json(hn_url(q, since)), p["name"])
+            except (OSError, ValueError, TypeError, AttributeError, KeyError) as e:  # network / JSON / shape
+                errors.append(f"hn [{p['name']}] {q!r}: {type(e).__name__}: {str(e)[:160]}")
+    return items, errors
 
 
 # --- GitHub (via the authenticated gh CLI) ------------------------------------------------------
@@ -73,23 +77,27 @@ def parse_github(doc: dict, pillar: str) -> list[dict]:
     } for r in doc.get("items", [])]
 
 
-def github(pillars: list[dict], days: int = 7, per_query: int = 8) -> list[dict]:
-    since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
-    items = []
+def github(pillars: list[dict], days: int = 7, per_query: int = 8) -> tuple[list[dict], list[str]]:
+    since = (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%d")
+    items, errors = [], []
     for p in pillars:
         for q in p.get("github", []):
             cmd = ["gh", "api", "-X", "GET", "search/repositories", "-f", f"q={q} created:>{since}",
                    "-f", "sort=stars", "-f", f"per_page={per_query}"]
-            doc = json.loads(subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=60).stdout)
-            items += [i for i in parse_github(doc, p["name"]) if i["signal"] >= 5]
-    return items
+            try:
+                doc = json.loads(subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=60).stdout)
+                items += [i for i in parse_github(doc, p["name"]) if i["signal"] >= 5]
+            except (subprocess.SubprocessError, OSError, ValueError, TypeError, AttributeError, KeyError) as e:
+                detail = getattr(e, "stderr", None) or str(e)
+                errors.append(f"github [{p['name']}] {q!r}: {type(e).__name__}: {str(detail)[:160]}")
+    return items, errors
 
 
 # --- Composio: news, web (EN + FA), Reddit, YouTube, Google Trends ------------------------------
 
 def composio_calls(pillars: list[dict], hours: int = 48) -> list[tuple[str, dict, str, str]]:
     """(slug, args, pillar, lang) for one `composio execute --parallel` batch."""
-    after = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    after = (datetime.now(UTC) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
     calls = []
     for p in pillars:
         n = p["name"]
@@ -105,19 +113,63 @@ def composio_calls(pillars: list[dict], hours: int = 48) -> list[tuple[str, dict
     return calls
 
 
-def _follow_spill(o):
-    """The composio CLI spills large outputs to a file and leaves a pointer (same as ../linkedin)."""
+def _is_spill(o) -> bool:
+    return isinstance(o, dict) and bool(o.get("storedInFile") and o.get("outputFilePath"))
+
+
+def _follow_spill(o, errors: list[str]):
+    """The composio CLI spills large outputs to a file and leaves a pointer (same as ../linkedin).
+    An unreadable or undecodable spill file is appended to `errors` (the pointer is left in place)."""
     if isinstance(o, dict):
-        if o.get("storedInFile") and o.get("outputFilePath"):
+        if _is_spill(o):
             try:
                 with open(o["outputFilePath"], encoding="utf-8") as f:
                     return json.load(f)
-            except OSError:
+            except (OSError, ValueError) as e:
+                errors.append(f"unreadable spill file {o['outputFilePath']}: {type(e).__name__}: {str(e)[:100]}")
                 return o
-        return {k: _follow_spill(v) for k, v in o.items()}
+        return {k: _follow_spill(v, errors) for k, v in o.items()}
     if isinstance(o, list):
-        return [_follow_spill(v) for v in o]
+        return [_follow_spill(v, errors) for v in o]
     return o
+
+
+def _composio_batch(slugs: list[str], args: list[dict]) -> list[tuple[dict | None, str | None]]:
+    """Run one `composio execute --parallel` batch; return (result, None) or (None, reason) per call, in order.
+
+    The envelope is validated rather than trusted: a nonzero exit keeps whatever per-call results came back,
+    a missing/short `results` list yields an error for every call without a result (no silent zip truncation),
+    and a spill failure costs only its own call."""
+    cmd = ["composio", "execute", "--parallel"]
+    for slug, a in zip(slugs, args, strict=True):
+        cmd += [slug, "-d", json.dumps(a, ensure_ascii=False)]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300, check=False)
+    why = (f"composio exited {proc.returncode}: {(proc.stderr or '').strip()[:160]}" if proc.returncode
+           else "no result in composio output")
+    doc = None
+    try:
+        doc = json.loads(proc.stdout) if (proc.stdout or "").strip() else None
+    except ValueError as e:
+        why = f"{why}; unparseable output: {str(e)[:80]}"
+    if _is_spill(doc):  # the whole envelope was spilled
+        top: list[str] = []
+        doc = _follow_spill(doc, top)
+        why = "; ".join(top) or why
+    results = doc.get("results") if isinstance(doc, dict) else None
+    results = results if isinstance(results, list) else []
+    out: list[tuple[dict | None, str | None]] = []
+    for n, slug in enumerate(slugs):
+        r = results[n] if n < len(results) else None
+        if not isinstance(r, dict):
+            out.append((None, why))
+            continue
+        if r.get("slug") not in (None, slug):
+            out.append((None, f"result slug {r.get('slug')} does not match the call"))
+            continue
+        errs: list[str] = []
+        r = _follow_spill(r, errs)
+        out.append((None, errs[0]) if errs else (r, None))
+    return out
 
 
 def parse_composio_result(slug: str, data: dict, pillar: str, lang: str) -> list[dict]:
@@ -157,23 +209,27 @@ def parse_composio_result(slug: str, data: dict, pillar: str, lang: str) -> list
 
 
 def run_composio(calls: list[tuple[str, dict, str, str]]) -> tuple[list[dict], list[str]]:
-    cmd = ["composio", "execute", "--parallel"]
-    for slug, args, _, _ in calls:
-        cmd += [slug, "-d", json.dumps(args, ensure_ascii=False)]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    doc = _follow_spill(json.loads(proc.stdout))
+    batch = _composio_batch([c[0] for c in calls], [c[1] for c in calls])
     items, errors = [], []
-    for (slug, _, pillar, lang), r in zip(calls, doc.get("results", [])):
+    for (slug, _, pillar, lang), (r, why) in zip(calls, batch, strict=True):
+        if r is None:
+            errors.append(f"{slug} [{pillar}/{lang}]: {why}")
+            continue
         if not r.get("successful"):
             errors.append(f"{slug} [{pillar}/{lang}]: {str(r.get('error'))[:160]}")
             continue
-        items += parse_composio_result(slug, r.get("data") or {}, pillar, lang)
+        try:
+            items += parse_composio_result(slug, r.get("data") or {}, pillar, lang)
+        except (TypeError, AttributeError, KeyError, ValueError) as e:  # malformed data costs only this call
+            errors.append(f"{slug} [{pillar}/{lang}]: malformed data: {type(e).__name__}: {str(e)[:120]}")
     return items, errors
 
 
 def trends_momentum(doc: dict) -> dict | None:
     """Last week vs 12-week mean of Google Trends interest (relative per query; compare momentum only)."""
-    tl = (((doc.get("results") or {}).get("interest_over_time") or {}).get("timeline_data")) or []
+    tl = list((((doc.get("results") or {}).get("interest_over_time") or {}).get("timeline_data")) or [])
+    while tl and tl[-1].get("partial_data"):  # the running week is incomplete and would read as a fall
+        tl.pop()
     vals = [_num(v["values"][0].get("extracted_value")) for v in tl if v.get("values")]
     if len(vals) < 4:
         return None
@@ -183,13 +239,14 @@ def trends_momentum(doc: dict) -> dict | None:
 
 def run_trends(pillars: list[dict]) -> tuple[dict, list[str]]:
     qs = [p["trends"] for p in pillars if p.get("trends")]
-    cmd = ["composio", "execute", "--parallel"]
-    for q in qs:
-        cmd += ["COMPOSIO_SEARCH_TRENDS", "-d", json.dumps({"query": q})]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    doc = _follow_spill(json.loads(proc.stdout))
+    if not qs:
+        return {}, []
+    batch = _composio_batch(["COMPOSIO_SEARCH_TRENDS"] * len(qs), [{"query": q} for q in qs])
     out, errors = {}, []
-    for q, r in zip(qs, doc.get("results", [])):
+    for q, (r, why) in zip(qs, batch, strict=True):
+        if r is None:
+            errors.append(f"COMPOSIO_SEARCH_TRENDS [{q}]: {why}")
+            continue
         m = trends_momentum(r.get("data") or {}) if r.get("successful") else None
         if m:
             out[q] = m

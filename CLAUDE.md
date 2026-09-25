@@ -5,13 +5,14 @@ read by the sibling pipelines (`../linkedin`, `../telegram`). Plan and status: `
 
 Remote: https://github.com/hamed-aghasi/X-Automation (public).
 
-STATUS (2026-09-24): ✅ research graph built + run live (10 topics from 271 fresh items, 0 source errors, 15 tests
-pass). ⏳ X drafting/posting graph not started.
+STATUS (2026-09-26): ✅ research graph built, second-family reviewed and fixed (R0: 36 tests, ruff clean).
+⏳ X drafting/posting graph: rows X0-X8 in docs/PLAN.md, not started.
 
 ## Commands (verified 2026-09-24)
 ```
 uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt
-.venv/bin/python -m unittest discover -s tests          # 15 tests, offline (fixtures are real Composio output)
+.venv/bin/python -m unittest discover -s tests          # 36 tests, offline (fixtures are real Composio output)
+ruff check xr tests                                     # clean (config: pyproject.toml)
 .venv/bin/python -m xr.research                         # full run, ~4 min (~10 s sources, rest is claude -p rank)
 .venv/bin/python -m xr.research --no-rank               # sources only, ~10 s
 .venv/bin/python -m xr.research --only hn,github --no-trends   # subset of sources
@@ -27,10 +28,13 @@ uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requi
 - `xr/rank.py` `claude -p --json-schema` clusters items into 5-10 topics (EN + FA title/summary, angles, score,
   suitable_for); evidence cited by item id and mapped back in code, so it cannot invent URLs
 - `xr/research.py` the LangGraph: fetch_* + trends in parallel → normalize → rank → write
-- `research/<date>/research.json` (contract, `"schema": "x-research/1"`), `research.md` (human), `items.json`
+- `research/<date>/research.json` (contract, `"schema": "x-research/1"`), `research.md` (human), `items.json`;
+  a same-day rerun whose rank fails keeps those and writes `research.failed.json` + `items.failed.json` instead
 
 ## Gotchas
 - No ANTHROPIC_API_KEY on this machine: ranking uses `claude -p` on the subscription (`XR_MODEL`, default sonnet).
+  `--tools ""` alone still exposes every configured MCP server (measured 2026-09-26); `--strict-mcp-config` is
+  required and is asserted by a test. Live check: the call reports only `StructuredOutput`.
 - HN Algolia `numericFilters` must be URL-encoded (`>` raw returns non-JSON). reddit.com public JSON is 403 →
   Reddit goes through Composio. `COMPOSIO_SEARCH_WEB` `site:x.com` → HTTP 501 and web search never returns
   x.com posts: there is NO X source (needs the paid API or a scraper).

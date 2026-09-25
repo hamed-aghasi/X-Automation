@@ -10,9 +10,11 @@ import argparse
 import json
 import operator
 import os
-from datetime import datetime, timezone
+import tempfile
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Callable, TypedDict
+from typing import Annotated, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -33,6 +35,7 @@ class State(TypedDict, total=False):
     trends: dict
     fresh: list[dict]
     topics: list[dict]
+    rank_failed: bool
     out_dir: str
 
 
@@ -42,8 +45,8 @@ Fetcher = Callable[[list[dict], int], tuple[list[dict], list[str]]]
 
 def default_fetchers() -> dict[str, Fetcher]:
     return {
-        "hn": lambda p, h: (sources.hacker_news(p, h), []),
-        "github": lambda p, h: (sources.github(p, days=max(1, h // 24 * 3)), []),
+        "hn": lambda p, h: sources.hacker_news(p, h),
+        "github": lambda p, h: sources.github(p, days=max(1, h // 24 * 3)),
         "composio": lambda p, h: sources.run_composio(sources.composio_calls(p, h)),
     }
 
@@ -52,7 +55,7 @@ def _source_node(name: str, fetch: Fetcher):
     def node(state: State) -> dict:
         try:
             items, errors = fetch(state["pillars"], state["hours"])
-        except Exception as e:  # one dead source must not kill the run
+        except Exception as e:  # noqa: BLE001 — by design: one dead source must never kill the run
             return {"errors": [f"{name}: {type(e).__name__}: {str(e)[:200]}"], "source_counts": {name: 0}}
         return {"items": items, "errors": errors, "source_counts": {name: len(items)}}
     node.__name__ = f"fetch_{name}"
@@ -67,11 +70,13 @@ def build_graph(fetchers: dict[str, Fetcher], trends_fn, store: Store, out_root:
         try:
             t, errs = trends_fn(state["pillars"])
             return {"trends": t, "errors": errs}
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — by design: trends is a source and must never kill the run
             return {"trends": {}, "errors": [f"trends: {type(e).__name__}: {str(e)[:200]}"]}
 
     def normalize(state: State) -> dict:
-        return {"fresh": store.fresh(state.get("items", []), now, fresh_hours=state["hours"])}
+        errors: list[str] = []
+        fresh = store.fresh(state.get("items", []), now, fresh_hours=state["hours"], errors=errors)
+        return {"fresh": fresh, "errors": errors}
 
     def rank(state: State) -> dict:
         if not do_rank:
@@ -79,8 +84,8 @@ def build_graph(fetchers: dict[str, Fetcher], trends_fn, store: Store, out_root:
         recent = store.recent_topics(now)
         try:
             topics = ranker(state["fresh"], state["pillars"], recent, state.get("trends", {}), state["hours"], date)
-        except Exception as e:
-            return {"topics": [], "errors": [f"rank: {type(e).__name__}: {str(e)[:300]}"]}
+        except Exception as e:  # noqa: BLE001 — by design: a rank failure must never skip `write` (items lost)
+            return {"topics": [], "rank_failed": True, "errors": [f"rank: {type(e).__name__}: {str(e)[:300]}"]}
         store.save_topics(date, topics)
         return {"topics": topics}
 
@@ -95,10 +100,15 @@ def build_graph(fetchers: dict[str, Fetcher], trends_fn, store: Store, out_root:
             "items_fresh": len(state["fresh"]), "trends": state.get("trends", {}),
             "errors": state.get("errors", []), "topics": state.get("topics", []),
         }
-        (out / "research.json").write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        (out / "items.json").write_text(json.dumps(state["fresh"], indent=2, ensure_ascii=False) + "\n",
-                                        encoding="utf-8")
-        (out / "research.md").write_text(render_md(doc), encoding="utf-8")
+        body = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+        if state.get("rank_failed") and _has_topics(out / "research.json"):
+            # A same-day rerun whose rank failed must not replace good topics with []: keep the day's files.
+            _atomic_write(out / "research.failed.json", body)
+            _atomic_write(out / "items.failed.json", json.dumps(state["fresh"], indent=2, ensure_ascii=False) + "\n")
+            return {"out_dir": str(out)}
+        _atomic_write(out / "items.json", json.dumps(state["fresh"], indent=2, ensure_ascii=False) + "\n")
+        _atomic_write(out / "research.md", render_md(doc))
+        _atomic_write(out / "research.json", body)
         return {"out_dir": str(out)}
 
     g = StateGraph(State)
@@ -116,10 +126,36 @@ def build_graph(fetchers: dict[str, Fetcher], trends_fn, store: Store, out_root:
     return g.compile()
 
 
+def _atomic_write(path: Path, text: str) -> None:
+    """Write a unique temp file in the same directory, then os.replace, so a reader never sees a half-written
+    file and two concurrent writers never share a temp path. The temp file is removed if anything fails."""
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=path.name + ".",
+                                     suffix=".tmp", delete=False) as f:
+        tmp = f.name
+        try:
+            f.write(text)
+        except BaseException:
+            f.close()
+            os.unlink(tmp)
+            raise
+    try:
+        os.replace(tmp, path)
+    except BaseException:
+        os.unlink(tmp)
+        raise
+
+
+def _has_topics(path: Path) -> bool:
+    try:
+        return bool(json.loads(path.read_text(encoding="utf-8")).get("topics"))
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def render_md(doc: dict) -> str:
     L = [f"# Research {doc['date']}", "",
-         f"Window {doc['window_hours']}h · {doc['items_fresh']} fresh of {doc['items_collected']} collected · "
-         f"sources {json.dumps(doc['sources'])}", ""]
+         (f"Window {doc['window_hours']}h · {doc['items_fresh']} fresh of {doc['items_collected']} collected · "
+          f"sources {json.dumps(doc['sources'])}"), ""]
     if doc["trends"]:
         L += ["Trends momentum: " + ", ".join(f"{k} {v['momentum']}" for k, v in doc["trends"].items()), ""]
     for n, t in enumerate(doc["topics"], 1):
@@ -153,7 +189,7 @@ def main(argv=None):
         fetchers = {k: v for k, v in fetchers.items() if k in a.only.split(",")}
     trends_fn = (lambda p: ({}, [])) if a.no_trends else sources.run_trends
     os.makedirs(os.path.dirname(a.db), exist_ok=True)
-    graph = build_graph(fetchers, trends_fn, Store(a.db), Path(a.out), datetime.now(timezone.utc),
+    graph = build_graph(fetchers, trends_fn, Store(a.db), Path(a.out), datetime.now(UTC),
                         do_rank=not a.no_rank)
     final = graph.invoke({"pillars": pillars, "hours": a.hours})
     print(f"{final['out_dir']}: {len(final.get('topics', []))} topics, {len(final['fresh'])} fresh items, "

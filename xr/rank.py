@@ -5,6 +5,7 @@ can only point at material that was actually collected. Item text is untrusted w
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -98,16 +99,27 @@ def resolve(raw_topics: list[dict], ids: dict[str, dict], date: str) -> list[dic
         ev = [ids[e] for e in t.get("evidence", []) if e in ids]
         if not ev:
             continue
-        out.append({**t, "id": f"{date}-{slug(t['title'])}",
+        # The 6-hex evidence hash keeps two topics whose 60-char slugs collide from overwriting each other.
+        digest = hashlib.sha1("\n".join(sorted(e["url"] for e in ev)).encode()).hexdigest()[:6]
+        out.append({**t, "id": f"{date}-{slug(t['title'])}-{digest}",
                     "evidence": [{"title": e["title"], "url": e["url"], "source": e["source"],
                                   "signal": e["signal"], "lang": e["lang"]} for e in ev]})
     return sorted(out, key=lambda t: -t["score"])
 
 
+def _child_env(env) -> dict:
+    """A parent Claude Code session exports ANTHROPIC_BETAS (long-context beta); a nested `claude -p` on the
+    subscription rejects it with HTTP 400 (same fix as ../telegram/tg/llm.py)."""
+    return {k: v for k, v in env.items() if v is not None and k != "ANTHROPIC_BETAS"}
+
+
 def claude_json(prompt: str, schema: dict, model: str | None = None, timeout: int = 600) -> dict:
+    # --tools "" alone still exposes configured MCP servers (measured 2026-09-26); the prompt carries untrusted
+    # web text, so --strict-mcp-config (with no --mcp-config) leaves the child with no tools at all.
     cmd = ["claude", "-p", "--model", model or os.environ.get("XR_MODEL", "sonnet"), "--output-format", "json",
-           "--no-session-persistence", "--tools", "", "--json-schema", json.dumps(schema)]
-    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout)
+           "--no-session-persistence", "--tools", "", "--strict-mcp-config", "--json-schema", json.dumps(schema)]
+    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout, check=False,
+                          env=_child_env(os.environ))
     if proc.returncode != 0:
         raise RuntimeError(f"claude -p exited {proc.returncode}: {proc.stderr[:300]}")
     doc = json.loads(proc.stdout)

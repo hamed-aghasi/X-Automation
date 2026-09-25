@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import urllib.parse
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 _DROP_PARAMS = {"utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "ref_src", "si"}
 
@@ -29,11 +29,11 @@ def published_at(s: str) -> datetime | None:
         dt = datetime.fromisoformat(s)
     except ValueError:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def _iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return dt.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class Store:
@@ -47,18 +47,29 @@ class Store:
                 PRIMARY KEY (topic_id, platform));
         """)
 
-    def fresh(self, items: list[dict], now: datetime, fresh_hours: int = 48, max_age_days: int = 7) -> list[dict]:
+    def fresh(self, items: list[dict], now: datetime, fresh_hours: int = 48, max_age_days: int = 7,
+              errors: list[str] | None = None) -> list[dict]:
         """Drop items published more than `max_age_days` ago (COMPOSIO_SEARCH_NEWS ignores `when`, and
         web search returns evergreen pages; undated items are kept), dedupe by canonical URL (highest signal
         wins), record them, and drop anything first seen more than `fresh_hours` ago so the same story is
-        not re-researched every day."""
+        not re-researched every day. A malformed item is dropped and reported in `errors`, never fatal."""
         oldest = now - timedelta(days=max_age_days)
         best: dict[str, dict] = {}
         for i in items:
-            pub = published_at(i.get("published", ""))
+            try:
+                pub = published_at(i.get("published", ""))
+                key = canonical_url(i["url"])
+                i = {**i, "signal": float(i["signal"])}  # sources may hand "10"; compare numbers, not str/float
+                missing = [k for k in ("title", "source", "pillar", "lang") if k not in i]
+                if missing:
+                    raise KeyError(", ".join(missing))
+            except (ValueError, KeyError, TypeError, AttributeError) as e:
+                if errors is not None:
+                    errors.append(f"normalize: dropped item {str(i.get('url'))[:120]!r}: {type(e).__name__}: "
+                                  f"{str(e)[:120]}")
+                continue
             if pub and pub < oldest:
                 continue
-            key = canonical_url(i["url"])
             if key not in best or i["signal"] > best[key]["signal"]:
                 best[key] = {**i, "url": key}
         cutoff = _iso(now - timedelta(hours=fresh_hours))
@@ -89,12 +100,18 @@ class Store:
 
     def mark_used(self, topic_id: str, platform: str, now: datetime | None = None) -> None:
         self.db.execute("INSERT OR REPLACE INTO usage VALUES (?,?,?)",
-                        (topic_id, platform, _iso(now or datetime.now(timezone.utc))))
+                        (topic_id, platform, _iso(now or datetime.now(UTC))))
         self.db.commit()
 
-    def unused_topics(self, platform: str, days: int = 3) -> list[dict]:
-        since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    def unused_topics(self, platform: str, days: int = 3, now: datetime | None = None) -> list[dict]:
+        """Recent topics not yet used on `platform`. A topic sharing any evidence URL with a topic already used
+        there is the same story re-ranked on a later day under a new id, so it is hidden too."""
+        since = ((now or datetime.now(UTC)) - timedelta(days=days)).strftime("%Y-%m-%d")
+        used_urls = {e.get("url") for (data,) in self.db.execute(
+            "SELECT data FROM topics WHERE id IN (SELECT topic_id FROM usage WHERE platform=?)", (platform,))
+            for e in json.loads(data).get("evidence", [])} - {None}
         rows = self.db.execute(
             "SELECT data FROM topics WHERE date >= ? AND id NOT IN "
             "(SELECT topic_id FROM usage WHERE platform=?) ORDER BY date DESC", (since, platform))
-        return [json.loads(r[0]) for r in rows]
+        topics = [json.loads(r[0]) for r in rows]
+        return [t for t in topics if not used_urls & {e.get("url") for e in t.get("evidence", [])}]

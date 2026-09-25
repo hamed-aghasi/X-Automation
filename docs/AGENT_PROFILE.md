@@ -21,7 +21,7 @@ The plan-and-execute skill holds the method. This file holds the facts the metho
 
 | Suite | Command | Legs | Expected (2026-09-26) | What a green run WITHOUT the leg proves |
 |---|---|---|---|---|
-| unit | `.venv/bin/python -m unittest discover -s tests` | offline only | Ran 15, OK | parsing, store, rank mapping and graph wiring on fixtures; NOT that live sources still answer |
+| unit | `.venv/bin/python -m unittest discover -s tests` | offline only | Ran 36, OK | parsing, store, rank mapping and graph wiring on fixtures; NOT that live sources still answer |
 | live | `.venv/bin/python -m xr.research --no-rank` | network: HN, gh, composio | 0 errors (2026-09-24: 339 fresh) | — |
 | live rank | `.venv/bin/python -m xr.research` | + `claude -p` | ~4 min, 5-10 topics | — |
 
@@ -30,7 +30,7 @@ Run `claude -p` checks with `env -u ANTHROPIC_BETAS` when inside a Claude Code s
 ## Lint / format
 
 ```
-ruff check xr tests   # 2026-09-26: 8 errors (baseline; R0 brings it to 0)
+ruff check xr tests   # 2026-09-26 after R0: All checks passed! (config in pyproject.toml; dev pin ruff>=0.16,<0.17)
 ```
 
 ## Secrets

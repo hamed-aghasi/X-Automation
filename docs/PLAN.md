@@ -8,8 +8,7 @@ Local rebuild of n8n template 14768 ("Auto-post trending X tweets with Gemini AI
 at one niche and split so the research serves every platform, not only X.
 
 ## Inventory (measured 2026-09-26)
-- Research graph: `xr/` 4 modules, 15 tests green, `ruff check xr tests` = 8 errors (lint never wired).
-  Built inline in one session and **never independently reviewed**: that is row R0.
+- Research graph: `xr/` 4 modules, reviewed + fixed in R0 (2026-09-26): 36 tests green, ruff clean.
 - Research runs on the VPS (canonical store there, no cron, no GitHub auth → github source not running there).
   2026-09-25 VPS run: 9 topics, sources composio 318 / hn 16, 0 errors.
 - Consumers: none. ../telegram has no `/topics`; ../linkedin has its own topic search.
@@ -40,7 +39,7 @@ Counts are "before → at least"; a row may add tests, never delete or weaken on
 
 | Id | Deliverable (one sentence) | May touch | Gate (proven by a run) | Depends | Status |
 |---|---|---|---|---|---|
-| R0 | Second-family review of the research graph + lint wired and clean | `xr/`, `tests/`, `pyproject.toml` | Codex findings triaged in `docs/briefs/R0_findings_round1.md`; REAL ones fixed; suite 15 → ≥15 green; ruff 8 → 0 | — | 🔄 started 2026-09-26 |
+| R0 | Second-family review of the research graph + lint wired and clean | `xr/`, `tests/`, `pyproject.toml` | Codex findings triaged in `docs/briefs/R0_findings_round1.md`; REAL ones fixed; suite 15 → ≥15 green; ruff 8 → 0 | — | ✅ 2026-09-26: Codex found 10 (all REAL), re-check found 4 new + 3 partial, 2 rounds; suite 15 → 36, ruff 8 → 0; MCP isolation measured live |
 | X0 | Prove the X-side environment: Buffer key lists channels (read-only), Higgsfield `unlim` read, `claude -p` answers | `docs/AGENT_PROFILE.md` only | each command's real output pasted in the profile | D1 | ⏳ |
 | X1 | `xr/x_text.py`: X weighted length (URLs = 23, twitter-text v3 weights), fits-in-one check, EN + FA fixtures | `xr/x_text.py`, `tests/test_x_text.py` | tests incl. Persian, emoji, URL cases | D3 | ⏳ |
 | X2 | `draft` node: topic → EN and FA post(s) via `claude -p --json-schema`, validated by X1, cites only topic evidence | `xr/x_draft.py`, `prompts/`, tests | tests with a stub LLM + one real draft pasted in the report | X1, D2 | ⏳ |
