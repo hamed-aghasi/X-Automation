@@ -50,6 +50,17 @@ Counts are "before → at least"; a row may add tests, never delete or weaken on
 | X7 | (parked by D7=a) `image` node: Seedream 4.5 unlimited only; checks `unlim.available` first and skips (never spends) when false | `xr/x_image.py`, tests | test: unlim false → no generation call | X4, D7 | ⏳ gated |
 | X8 | VPS deploy + cron: daily research, then x graph up to the approval pause | VPS only (`-p` own project, no ports) | one scheduled run observed end-to-end to the approval message | X6, D4, D9 | ⏳ |
 
+### Bot track (user 2026-09-26: the Telegram bot is the hub; add capabilities step by step)
+Code lives in ../telegram (its own CI/CD: gitleaks + pyflakes + tests, deploy on push to main). Briefs, findings and
+the ledger stay here.
+
+| Id | Bot gains | Depends | Status |
+|---|---|---|---|
+| T1 | `/topics` (latest research, EN + FA) and `/topic <n>` (details + evidence), research dir mounted read-only | research on VPS | ✅ built + reviewed 2026-09-26 (telegram branch `t1-topics`, 66 tests); ⏳ deploy = merge to main (needs user OK) |
+| T2 | `/draft <n>`: X post drafted and reviewed for a topic | X2, X3 | ⏳ |
+| T3 | Approve / Edit / Reject buttons → Buffer (this is X5 + X6 with D5 = bot) | X4, X6, D1 | ⏳ |
+| T4 | `/ask <q>`: live Grok X search | G1, xAI key | ⏳ |
+
 Order rationale: R0 first (the new graph builds on `Store` and `rank`; review them before stacking on them), X0 next
 (it produces the evidence X6 needs), X1 has no dependencies and de-risks every draft.
 
