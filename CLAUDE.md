@@ -5,13 +5,13 @@ read by the sibling pipelines (`../linkedin`, `../telegram`). Plan and status: `
 
 Remote: https://github.com/hamed-aghasi/X-Automation (public).
 
-STATUS (2026-09-26): ✅ research graph built, second-family reviewed and fixed (R0: 36 tests, ruff clean).
-⏳ X drafting/posting graph: rows X0-X8 in docs/PLAN.md, not started.
+STATUS (2026-09-26): ✅ research graph (R0 reviewed + fixed) · ✅ X1 `xr/x_text.py` X weighted length · 53 tests, ruff
+clean. ⏳ X graph rows X0, X2-X8 in docs/PLAN.md.
 
 ## Commands (verified 2026-09-24)
 ```
 uv venv --python 3.13 .venv && uv pip install --python .venv/bin/python -r requirements.txt
-.venv/bin/python -m unittest discover -s tests          # 36 tests, offline (fixtures are real Composio output)
+.venv/bin/python -m unittest discover -s tests          # 53 tests, offline (fixtures: real Composio output, X's v3 conformance)
 ruff check xr tests                                     # clean (config: pyproject.toml)
 .venv/bin/python -m xr.research                         # full run, ~4 min (~10 s sources, rest is claude -p rank)
 .venv/bin/python -m xr.research --no-rank               # sources only, ~10 s
@@ -28,6 +28,8 @@ ruff check xr tests                                     # clean (config: pyproje
 - `xr/rank.py` `claude -p --json-schema` clusters items into 5-10 topics (EN + FA title/summary, angles, score,
   suitable_for); evidence cited by item id and mapped back in code, so it cannot invent URLs
 - `xr/research.py` the LangGraph: fetch_* + trends in parallel → normalize → rank → write
+- `xr/x_text.py` `weighted_length` / `check`: X's v3 count (URL = 23, emoji = 2, Persian + ZWNJ = 1, RLM/LRM = 2)
+  via `twitter-text-parser` 3.0.0 (archived, MIT); all 22 official v3 conformance cases pass (tests/fixtures)
 - `research/<date>/research.json` (contract, `"schema": "x-research/1"`), `research.md` (human), `items.json`;
   a same-day rerun whose rank fails keeps those and writes `research.failed.json` + `items.failed.json` instead
 
@@ -41,6 +43,9 @@ ruff check xr tests                                     # clean (config: pyproje
 - `COMPOSIO_SEARCH_NEWS` ignores `when`, and web search returns evergreen pages: `Store.fresh` drops anything
   published >7 days ago (undated kept). Persian web search yields few fresh items (17 on the first run); Persian
   text in topics is written by Claude from mostly English sources.
+- `twitter-text-parser` imports `pkg_resources`, gone from setuptools ≥82 and noisy in 75-81; `xr/x_text.py`
+  installs a one-function stand-in only for that import (measured 2026-09-26, reason in its docstring). Its emoji
+  data is Emoji 12.0 (2019): newer emoji sequences overcount (safe direction). CRLF is counted as 2 on purpose.
 - Items are untrusted web content (prompt is fenced). Topics backed only by Reddit are unverified claims: check
   evidence before posting.
 - Posting goes through Buffer's own GraphQL API with a personal key (`BUFFER_API_KEY`), not Composio (its Buffer and

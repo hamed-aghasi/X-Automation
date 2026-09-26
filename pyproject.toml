@@ -5,6 +5,7 @@ requires-python = ">=3.13"
 dependencies = [
     "langgraph==1.2.12",
     "langgraph-checkpoint-sqlite==3.1.1",
+    "twitter-text-parser==3.0.0",
 ]
 
 [dependency-groups]
