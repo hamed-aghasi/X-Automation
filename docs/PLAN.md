@@ -67,5 +67,5 @@ Order rationale: R0 first (the new graph builds on `Store` and `rank`; review th
 | — | human approval via `interrupt()` |
 
 ## Not in this plan (other repos)
-- ../telegram: deployed bot is older than git HEAD (5629eea, 5d10e3f not deployed, measured 2026-09-26); CLAUDE.md
-  says 30 tests, suite runs 36; `/topics` reading the research. Tracked in that repo, not here.
+- ../telegram: `/topics` reading the research. (Deploy drift noted earlier on 2026-09-26 is resolved: VPS files and
+  the running container match HEAD a7b9c38, re-measured the same day.) Tracked in that repo, not here.
