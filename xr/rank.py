@@ -113,11 +113,14 @@ def _child_env(env) -> dict:
     return {k: v for k, v in env.items() if v is not None and k != "ANTHROPIC_BETAS"}
 
 
-def claude_json(prompt: str, schema: dict, model: str | None = None, timeout: int = 600) -> dict:
+def claude_json(prompt: str, schema: dict, model: str | None = None, timeout: int = 600,
+                effort: str | None = None) -> dict:
     # --tools "" alone still exposes configured MCP servers (measured 2026-09-26); the prompt carries untrusted
     # web text, so --strict-mcp-config (with no --mcp-config) leaves the child with no tools at all.
     cmd = ["claude", "-p", "--model", model or os.environ.get("XR_MODEL", "sonnet"), "--output-format", "json",
            "--no-session-persistence", "--tools", "", "--strict-mcp-config", "--json-schema", json.dumps(schema)]
+    if effort:  # opt-in (X draft/review pass "medium"); rank passes nothing, so its argv is unchanged
+        cmd += ["--effort", effort]
     proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout, check=False,
                           env=_child_env(os.environ))
     if proc.returncode != 0:

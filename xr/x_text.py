@@ -42,14 +42,20 @@ def _import_parser():
     try:
         from twitter_text import parse_tweet
         from twitter_text.config import config
+        from twitter_text.extract_urls import extract_urls
         from twitter_text.has_invalid_characters import has_invalid_characters
     finally:
         if shimmed:
             sys.modules.pop("pkg_resources", None)
-    return parse_tweet, config["version3"], has_invalid_characters
+    return parse_tweet, config["version3"], has_invalid_characters, extract_urls
 
 
-_parse_tweet, _V3, _has_invalid = _import_parser()
+_parse_tweet, _V3, _has_invalid, _extract_urls = _import_parser()
+
+
+def extract_urls(text: str) -> list[str]:
+    """URLs exactly as X recognises them (with or without protocol, any case, bare domains like evil.com)."""
+    return list(_extract_urls(text))
 
 
 def _has_lone_surrogate(text: str) -> bool:
