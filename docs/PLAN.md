@@ -1,6 +1,6 @@
 # X research + posting pipeline (LangGraph)
 
-STATUS (2026-10-02): ✅ R0, X1, X2, X3 done (93 tests) · ✅ T1 built + reviewed, NOT deployed (telegram branch `t1-topics`) ·
+STATUS (2026-10-02): ✅ R0, X1, X2, X3 done (93 tests) · ✅ T1 `/topics` live in the bot (2026-10-02) ·
 ⏳ X0, X4-X8, T2-T4, G1, C1 not started · method: plan-and-execute skill (profile `docs/AGENT_PROFILE.md`, ledger `docs/REVIEW_LEDGER.md`,
 handoff `HANDOFF.local.md`, local only because this repo is public).
 
@@ -56,7 +56,7 @@ the ledger stay here.
 
 | Id | Bot gains | Depends | Status |
 |---|---|---|---|
-| T1 | `/topics` (latest research, EN + FA) and `/topic <n>` (details + evidence), research dir mounted read-only | research on VPS | ✅ built + reviewed 2026-09-26 (telegram branch `t1-topics`, 66 tests); ⏳ deploy = merge to main (needs user OK) |
+| T1 | `/topics` (latest research, EN + FA) and `/topic <n>` (details + evidence), research dir mounted read-only | research on VPS | ✅ deployed 2026-10-02 (telegram cb73af9, CI 37026886381 green; mount verified ro in the container) |
 | T2 | `/draft <n>`: X post drafted and reviewed for a topic | X2, X3 | ⏳ |
 | T3 | Approve / Edit / Reject buttons → Buffer (this is X5 + X6 with D5 = bot) | X4, X6, D1 | ⏳ |
 | T4 | `/ask <q>`: live Grok X search | G1, xAI key | ⏳ |
