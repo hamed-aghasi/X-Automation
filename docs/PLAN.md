@@ -1,7 +1,7 @@
 # X research + posting pipeline (LangGraph)
 
-STATUS (2026-09-26): ✅ research graph built (bb6676e), live on the VPS · ⏳ x graph: shaped into rows R0, X0-X8 below,
-none started · method: plan-and-execute skill (profile `docs/AGENT_PROFILE.md`, ledger `docs/REVIEW_LEDGER.md`,
+STATUS (2026-10-02): ✅ R0, X1, X2, X3 done (93 tests) · ✅ T1 built + reviewed, NOT deployed (telegram branch `t1-topics`) ·
+⏳ X0, X4-X8, T2-T4, G1, C1 not started · method: plan-and-execute skill (profile `docs/AGENT_PROFILE.md`, ledger `docs/REVIEW_LEDGER.md`,
 handoff `HANDOFF.local.md`, local only because this repo is public).
 
 Local rebuild of n8n template 14768 ("Auto-post trending X tweets with Gemini AI images, FLUX and Buffer"), aimed
